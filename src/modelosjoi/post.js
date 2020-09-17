@@ -28,7 +28,7 @@ async function validarModelo(contenido) {
     throw new errors.BadRequest('No se han ingresado datos')
   }
   try {
-    const value = await schema.validateAsync(contenido)
+    await schema.validateAsync(contenido)
     ValidarImagen(contenido.imagen)
   } catch(err) {
     console.log(err)

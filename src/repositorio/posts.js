@@ -7,7 +7,6 @@ async function createPost(contenido) {
   return await db.posts.create(contenido)
 }
 async function getAllPosts() {
-  console.log(db)
   return await db.posts.findAll({})
 }
 
@@ -34,13 +33,14 @@ async function getPostExistente(id) {
       id: id
     }
   })
-  if (resultado == null) {
+  if (_.isNull(resultado)) {
     throw new errors.NotFound('El id es incorrecto')
   }
+  return resultado
 }
 
 async function deletePostById(id) {
-  const resultado = getPostExistente(id)
+  const resultado = await getPostExistente(id)
   await resultado.destroy()
 }
 

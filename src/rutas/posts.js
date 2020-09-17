@@ -5,19 +5,25 @@ router.get('/', async (req, res) => {
   res.json(resultados)
 })
 router.get('/:id', async (req, res) => {
-
+  const id = req.params.id
+  const resultados = await PostsServicio.getPostById(id)
+  res.status(resultados.statusCode).json(resultados.resultado)
 })
 router.post('/', async (req, res) => {
   const contenido = req.body
-  console.log(contenido.contenido.length)
   const resultado = await PostsServicio.newPost(contenido)
   res.status(resultado.statusCode).json(resultado.resultado)
 })
-router.patch('/:id', (req, res) => {
-
+router.patch('/:id', async (req, res) => {
+  const contenido = req.body
+  const id = req.params.id
+  const resultado = await PostsServicio.actualizarPost(id, contenido)
+  res.status(resultado.statusCode).json(resultado.resultado)
 })
-router.delete('/:id', (req, res) => {
-
+router.delete('/:id', async (req, res) => {
+  const id = req.params.id
+  const resultado = await PostsServicio.borrarPost(id)
+  res.status(resultado.statusCode).json(resultado.resultado)
 })
 
 module.exports = router

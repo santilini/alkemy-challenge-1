@@ -4,7 +4,7 @@ const _ = require('lodash')
 const errors = require('../errores/errors')
 const schema = joi.object({
   
-    titulo: Joi.string().alphanum().min(10).max(150),
+    titulo: Joi.string().min(10).max(150),
     contenido: Joi.string().min(10).max(5000),
     imagen: Joi.string().min(15),
     categoria: Joi.number().positive()
@@ -17,7 +17,7 @@ function ValidarImagen(url) {
   const array = url.split('.')
   const extension = array[array.length - 1]
   const imagen = extensiones.find(ext => ext == extension)
-  if (_.isNull(imagen)) {
+  if (!_.isNull(imagen)) {
     throw new errors.BadRequest('El formato de la imagen no es correcto')
   }
 }
@@ -26,10 +26,13 @@ async function validarModelo(contenido) {
     throw new errors.BadRequest('No se han ingresado datos')
   }
   try {
-    const value = await schema.validate(contenido)
-    console.log(value)
+    await schema.validate(contenido)
+    if (!_.isUndefined(contenido.imagen)) {
+      ValidarImagen(contenido.imagen)
+    }
+    
   } catch(err) {
-    throw new errors.BadRequest('Informacion ingresada incorrecta')
+    throw new errors.BadRequest('Informacion ingresada incorrecta:' + err.message )
   }
 } 
 
