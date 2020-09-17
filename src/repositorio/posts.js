@@ -3,6 +3,7 @@ const {db} = require('../db')
 const _ = require('lodash')
 const errors = require('../errores/errors')
 
+
 async function createPost(contenido) {
   return await db.posts.create(contenido)
 }

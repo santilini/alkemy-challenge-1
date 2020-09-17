@@ -1,9 +1,20 @@
 const repositorio = require('../repositorio/posts')
 const PostSchema = require('../modelosjoi/post')
 const PostEdicionSchema = require('../modelosjoi/cambios')
+const cache = require('../servicios/cache')
+const repositorioCategorias = require('../repositorio/categorias')
+const errors = require('../errores/errors')
+const _ = require('lodash')
+
+cache.borrarTodaLaCache()
 async function getAllPosts() {
   const resultadoPodado = []
-  const resultados = await repositorio.getAllPosts()
+  let resultados
+  resultados = await cache.getCacheFromString(cache.querys.ALL)
+  if (!resultados) {
+    resultados = await repositorio.getAllPosts()
+    cache.cacheValue(cache.querys.ALL, resultados)
+  } 
   for (const resultado of resultados) {
     resultadoPodado.push(arreglarRespuesta(resultado))
   }
@@ -12,7 +23,14 @@ async function getAllPosts() {
 
 async function getPostById(id) {
   try {
-    const resultado = await repositorio.getPostById(id)
+    let resultado = await cache.getCacheFromString(id)
+    if (!resultado) {
+      resultado = await repositorio.getPostById(id)
+      if (_.isNull(resultado) || _.isUndefined(id)) {
+        throw new errors.NotFound('No se encuentra el post.')
+      }
+      cache.cacheValue(id, resultado)
+    }
     return {
       resultado: arreglarRespuesta(resultado),
       statusCode: 200
@@ -27,9 +45,15 @@ async function newPost(contenido) {
   try {
     await PostSchema(contenido)
     const newPost = arreglarCategoriaPost(contenido)
+    const existeCategoria = await repositorioCategorias.getCategoria(contenido.categoria)
+    if (_.isUndefined(existeCategoria) || _.isNull(existeCategoria)) {
+      throw new errors.NotFound('La categoria no se encuentra')
+    }
     const resultado = await repositorio.createPost(newPost)
+    
+    cache.deleteCache(cache.querys.ALL)
     return {resultado: 
-      arreglarRespuesta(resultado), 
+      arreglarRespuesta(resultado),
       statusCode: 201}
   } catch (err) {
     console.log(err)
@@ -42,6 +66,7 @@ async function actualizarPost(id, contenido) {
     await PostEdicionSchema(contenido)
     const arreglarContenido = arreglarCategoriaEnCambios(contenido)
     const resultado = await repositorio.updatePostById(id, arreglarContenido)
+    borrarCache(id)
     return  {
       resultado: arreglarRespuesta(resultado), 
       statusCode: 202}
@@ -54,6 +79,7 @@ async function actualizarPost(id, contenido) {
 async function borrarPost( id) {
   try {
     await repositorio.deletePostById(id)
+    borrarCache(id)
     return {resultado: {message: 'El post fue borrado con exito'}, statusCode: 203}
   } catch (err) {
     console.log(err)
@@ -97,5 +123,9 @@ function arreglarRespuesta(resultado) {
     categoria: resultado.categoriumId,
     fechadecreacion: resultado.createdAt
   }
+}
+function borrarCache(id) {
+  cache.deleteCache(id)
+    cache.deleteCache(cache.querys.ALL)
 }
 module.exports = { newPost, getAllPosts, getPostById, actualizarPost, borrarPost}
